@@ -187,6 +187,36 @@ where $\varepsilon$ is a centered noise independent of $X$.
 $\rightharpoondown$ The statistical model is then given by $(X,Y)\in\mathbb{R}^p\times \mathbb{R}^m$ and \textcolor{violet}{the objective is to define the  best estimator of $f$ in a given context}. %An element of $\mathbb{R}^p$ contains all the features the label prediction or the regression estimate has to be based on.
 \end{frame}
 
+\begin{frame}
+\textcolor{violet}{{\bf State sequence ${\bf X}$}} characterizing the system:
+
+\vspace{.2cm}
+
+$\rightharpoondown$ \; discrete/\textcolor{lighto}{continuous-time}, discrete/\textcolor{lighto}{continuous} state space ;
+
+\vspace{.2cm}
+
+$\rightharpoondown$ \; law given by a \textcolor{lighto}{parametric} or nonparametric probabilistic model ;
+
+\vspace{.2cm}
+
+
+$\rightharpoondown$ \; \alert{independent state} or distribution governed by either a	\textcolor{lighto}{Markovian} or a slowly mixing behavior.
+
+\vspace{.5cm}
+
+\textcolor{violet}{{\bf Sequence of observations ${\bf Y}$}} characterizing at each time step this system:
+
+\vspace{.2cm}
+
+$\rightharpoondown$ \; \textcolor{lighto}{discrete}/continuous-time, discrete/\textcolor{lighto}{continuous} observation space ;
+
+\vspace{.2cm}
+
+$\rightharpoondown$ \; parametric or \textcolor{lighto}{nonparametric} probabilistic model.
+
+\end{frame}
+
 \begin{frame}{Machine Learning in a few words - clustering}
 \begin{center}
 %\includegraphics[scale=.2]{hp.png}
@@ -240,6 +270,33 @@ $\rightharpoondown$ \alert{Experience}: millions of observations obtained from h
 
 \end{frame}
 
+\begin{frame}{Machine Learning in a few words -  Continuous time target tracking}
+\begin{figure}
+\includegraphics[height=3cm]{traj_vsl}
+\hspace{.2cm}
+\includegraphics[height=3cm]{map_data_673_euler}
+\hspace{.2cm}
+\includegraphics[height=3cm]{map_data_673_ushida}
+\end{figure}
+
+
+\vspace{.45cm}
+
+
+$\rightharpoondown$ \; $(X_{t})_{t\geqslant 0}$ is the \textcolor{violet}{{\bf continuous time position}} (\alert{coordinates}, \alert{orientation}, etc.): 
+
+\[
+\mathrm{d}X_t = \alpha_{\theta}(X_t)\mathrm{d}t + \sigma_{\theta}(X_t)\mathrm{d}W_t\,.
+\]
+
+\vspace{.3cm}
+
+$\rightharpoondown$ \; An observation (GPS...) at each \textcolor{violet}{{\bf discrete time $t_k$}}.
+
+$$
+Y_{k} = f_{\star}(X_k) + \varepsilon_k\eqsp.
+$$
+\end{frame}
 
 \begin{frame}\frametitle{Machine Learning in a few words}
 \begin{center}
@@ -1589,26 +1646,48 @@ $\rightharpoondown$ \textcolor{violet}{{\bf Compute the principal components}}:
 
 \begin{frame}{Linear independent component analysis}
 $\rightharpoondown$ {\bf \textcolor{violet}{Linear independent component analysis}} of a random vector $X$ amounts to estimating the following model
+
 \begin{align*}
 \Acolorboxed{& X = AS + \varepsilon\eqsp,}
 \end{align*}
+
 where $A\in\rset^{d\times n}$ is an unknown \alert{mixing} matrix, $S\in\rset^{n}$ is a random vector with independent entries and $\varepsilon$ is an independent noise.
 
-$\rightharpoondown$ Noise free formulation of this problem, i.e. $X = AS$, was proposed in the signal processing litterature\footnote{{\tiny Blind separation of sources, part I: an adaptive algorithm based on neuromimetic architecture. {\bf Jutten, C. et al.}, {\em Signal Processing, 2(4), 1-10}}, 1991}
+\vspace{.4cm}
+
+$\rightharpoondown$ \alert{Noise free formulation} of this problem, i.e. $X = AS$, was proposed in the signal processing litterature\footnote{{\tiny Blind separation of sources, part I: an adaptive algorithm based on neuromimetic architecture. {\bf Jutten, C. et al.}, {\em Signal Processing, 2(4), 1-10}}, 1991}
 \end{frame}
 
 \begin{frame}{Linear independent component analysis - identifiability}
 The {\bf \textcolor{violet}{noise free linear independent component analysis}} is identifiable under the following (sufficient conditions).
 
-$\rightharpoondown$ 
+$\rightharpoondown$ The  components $S_i$ \alert{are not Gaussian random variables} (with the possible exception of one component).
 
-\vspace{.3cm}
+\vspace{.4cm}
 
-$\rightharpoondown$ 
+$\rightharpoondown$ $d\geqslant n$, i.e. \alert{the number of oservations is greater than the number of independent components}.
 
-\vspace{.3cm}
+\vspace{.4cm}
 
-$\rightharpoondown$ 
+$\rightharpoondown$ The matrix $A$ has \alert{full rank}.
+\end{frame}
+
+\begin{frame}{Linear independent component analysis - identifiability}
+Assume that $d\geqslant n$, and that the components $S_i$ \alert{are not Gaussian random variables} (with the possible exception of one component) in the model
+
+\begin{align*}
+\Acolorboxed{& X = AS\eqsp.}
+\end{align*}
+
+
+\vspace{.4cm}
+
+Assume also that the probability density $p_S$ of $S$ belogns to a subset $\mathsf{E}$ of probability densities on $\rset^n$ which admit (at least) a moment up to order $2$.
+
+\vspace{.4cm}
+
+Then, if \alert{$X= \tilde A \tilde S$}, where the probability density $p_{\tilde S}$ of $\tilde S$ lies in $\mathsf{E}$ and if \alert{the contrast function $\Psi$ is discriminant over $\mathsf{E}$}, $\Psi(p_{\tilde S}) = \Psi(p_{S})$ {\bf \textcolor{violet}{if and only if $\tilde A = A \Lambda P$ where $\Lambda$ is an invertible diagonal matrix and $P$ is a permutation matrix}}.
+
 \end{frame}
 
 \section{Correspondence analysis}
@@ -1645,7 +1724,7 @@ $\rightharpoondown$ Principal components obtained by the \textcolor{lighto}{sing
 
 \begin{frame}{Other dimensionality reduction techniques}
 
-$\rightharpoondown$  \textcolor{lighto}{Independent component analysis} (ICA)\footnote{{\tiny Independent component analysis: algorithms and applications, {\bf Hyvarinen, A. et al.}, {\em Neural networks, 13(4-5), 411-430}}, 2000}.
+$\rightharpoondown$  \textcolor{lighto}{Nonlinear independent component analysis} (ICA)\footnote{{\tiny Independent component analysis: algorithms and applications, {\bf Hyvarinen, A. et al.}, {\em Neural networks, 13(4-5), 411-430}}, 2000}.
 
 \vspace{.3cm}
 
