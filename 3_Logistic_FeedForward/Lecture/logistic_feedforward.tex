@@ -216,11 +216,11 @@ $\rightharpoondown$ $Y_i \in \{ 0, 1 \}$ is  the \textbf{label} of $i$.
 
 \vspace{.6cm}
 
-\textcolor{violet}{{\bf Aim}}
+\textcolor{violet}{{\bf Objective}}
 
 $\rightharpoondown$ Given a new $X$ (with no corresponding label), \alert{predict a label in $\{ 0, 1 \}$}.
 
-$\rightharpoondown$ Use data $\mathcal{D}_n = \{ (x_1, y_1), \ldots, (x_n, y_n) \}$ \alert{to construct a  \textbf{classifier}}.
+$\rightharpoondown$ Use data $\mathcal{D}_n = \{ (X_1, Y_1), \ldots, (X_n, Y_n) \}$ \alert{to construct a  \textbf{classifier}}.
 
 \end{frame}
 
@@ -254,8 +254,7 @@ The explicit solution requires to \alert{know the conditional law of $Y$ given $
 
 \end{frame}
 
-\begin{frame}
-  \frametitle{How to estimate the conditional law of $Y$?}
+\begin{frame}{How to estimate the conditional law of $Y$?}
 
 
 \textcolor{violet}{{\bf Fully parametric modeling.}}
@@ -286,21 +285,21 @@ The explicit solution requires to \alert{know the conditional law of $Y$ given $
 \begin{frame}\frametitle{Fully parametric modeling - Discriminant Analysis}
 
 
-The \alert{conditional densities are modeled as multivariate normal}. For all class $k$, conditionnally on $\{Y=k\}$,
+The \alert{conditional densities are modeled as multivariate normal}. For all class $k\in\{0,1\}$, conditionnally on $\{Y=k\}$,
 \begin{align*}
-\vecX\sim \mathcal{N}(\mu_k, \Sigma_k)\,.
+X\sim \mathcal{N}(\mu_k, \Sigma_k)\,.
 \end{align*}
-\textcolor{lightr}{Discriminant functions}:
+\textcolor{violet}{Discriminant functions}:
 $$
-g_k(\vecX) = \ln (\mathbb{P}\{\vecX|Y=k\}) + \ln(\Prob{Y=k})
+\psi_k: x\mapsto \ln (g_k(x) + \ln(\Prob{Y=k})
 \eqsp.
 $$
 
-In a two-classes problem, the optimal classifier is (\alert{see exercises}):
+In a two-classes problem, the optimal classifier is:
 
 \begin{align*}
 \Acolorboxed{&
-f^*:x\mapsto \mathds{1}\{g_1(x)>g_{-1}(x)\}\eqsp.}
+f^*:x\mapsto \mathds{1}\{\psi_1(x)>\psi_{0}(x)\}\eqsp.}
 \end{align*}
 
 
@@ -309,14 +308,29 @@ f^*:x\mapsto \mathds{1}\{g_1(x)>g_{-1}(x)\}\eqsp.}
 
 \textcolor{violet}{QDA (differents $\Sigma_k$ in each class)}  and \textcolor{violet}{LDA ($\Sigma_k=\Sigma$ for all $k$)} 
 
+\vspace{.3cm}
+
+ $\rightharpoondown$ May lead to poor results is the \alert{model does not describe the data correctly}.
+
+
+\end{frame}
+
+\begin{frame}\frametitle{Fully parametric modeling - Discriminant Analysis}
+
+
 In the LDA case, the classification rule is of the form:
 \begin{equation*}
 f^*(x) = 1 \Leftrightarrow \langle w,x \rangle + b \geqslant 0\,,
 \end{equation*}
-where $w$ and $b$ depends on the model parameters.
+where \alert{$w$ and $b$ depends on the model parameters}.
 
- %$\rightharpoondown$ May lead to poor results is the \alert{model does not describe the data correctly}.
+\begin{center}
+\includegraphics[width=5cm]{./logistic.png} 
+\end{center}
 
+$\rightharpoondown$ How to relax the Gaussian assumption ? (\alert{logistic model}).
+
+$\rightharpoondown$ How to design nonlinear classification rules ? (\alert{neural networks}).
 
 \end{frame}
 
@@ -414,12 +428,13 @@ $\rightharpoondown$ The objective is to \alert{predict the  label $Y\in\{0,1\}$}
 
 $\rightharpoondown$ Logistic regression \alert{models the distribution of $Y$ given $X$}.
 
-\vspace{.3cm}
+\vspace{-.2cm}
 
-{\bf\textcolor{violet}{The model}} 
+%{\bf\textcolor{violet}{The model}} 
 \begin{equation*}
 \P(Y = 1| X) = \sigma(\langle w,X \rangle + b)\,,
 \end{equation*}
+
 where $w \in \R^d$ is a vector of model \textbf{weights} and $b \in \R$ is the \textbf{intercept}, and where $\sigma$ is the \textbf{sigmoid} function.
 
 \vspace{.3cm}
@@ -432,7 +447,7 @@ where $w \in \R^d$ is a vector of model \textbf{weights} and $b \in \R$ is the \
 	\end{minipage}
 	&
 	\begin{minipage}{0.4\textwidth}
-		\includegraphics[width=4cm]{./sigmoid.png}  
+		\includegraphics[width=5cm]{./sigmoid.png}  
 	\end{minipage}    
 \end{tabular}
 
@@ -565,7 +580,40 @@ $\rightharpoondown$ \alert{No explicit solution} for the maximizer of the loglik
 
 \end{frame}
 
-\subsection{Intepretation}
+\begin{frame}{Maximum likelihood estimate}
+The negative loglikelihood
+\begin{align*}
+\Acolorboxed{&
+\ell_n(w) = - \log(L_n(w)) =  \sum_{i=1}^n \left(-Y_i X_i^T w+ \log(1+ e^{X_i^Tw})\right)\,.}
+\end{align*}
+
+is minimized using a gradient descent algorithm. 
+
+Starting with an \alert{initial estimate $w^{(0)}$}, for all $k\geqslant 1$, set
+\begin{align*}
+\Acolorboxed{&
+w^{(k)} = w^{(k-1)} - \eta_k \nabla \ell_n(w^{(k-1)})\,.}
+\end{align*}
+
+\begin{center}
+\includegraphics[width = 7cm]{gradient_descent.png}
+\end{center}
+
+\end{frame}
+
+\begin{frame}{Maximum likelihood estimate}
+Let $(w^*,b^*)$ be the parameter estimates \alert{after the gradient descent algorithm}.
+
+The usual logistic regression classifier is $f^*(X) = 1 \Leftrightarrow \mathbb{P}(Y = 1| X) >1/2$. 
+
+\textcolor{violet}{Sensitivity of the classifier to this threshold}: for each value $p^*\in(0,1)$ the ROC curve classifies individuals using $f^*(X) = 1 \Leftrightarrow\mathbb{P}(Y = 1| X) > p^*$ and plots the True positive rate as a function of the False positive rate. 
+
+
+\begin{center}
+\includegraphics[width = 7cm]{roc_curve.png}
+\end{center}
+
+\end{frame}
 
 \begin{frame}
 The \alert{gradient of the negative loglikelihood} is, 
@@ -720,7 +768,7 @@ $\rightharpoondown$ $g$ \alert{softmax function}.
 
 \vspace{.3cm}
 
-{\bf\textcolor{violet}{On neuron is a multi-class extension of the logistic regression model}}. 
+{\bf\textcolor{violet}{One neuron is a multi-class extension of the logistic regression model}}. 
 
 \end{frame}
 
