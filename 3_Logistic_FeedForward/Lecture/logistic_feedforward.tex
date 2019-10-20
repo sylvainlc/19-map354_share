@@ -508,7 +508,7 @@ and the \alert{normalized negative loglikelihood} is
 \smallskip
 
 \begin{equation*}
-f(w,b) = \frac{1}{n}\sum_{i=1}^n \log (1 + \mathrm{e}^{-Y_i (\langle w,X_i \rangle + b)})= \frac{1}{n}\sum_{i=1}^n \ell(Y_i, \langle w,X_i \rangle + b)\,.
+f(w,b) = \frac{1}{n}\sum_{i=1}^n \ell(Y_i, \langle w,X_i \rangle + b)\,.
 \end{equation*}
 \end{frame}
 
@@ -520,7 +520,7 @@ Compute $\hat w_n$ and $\hat b_n$ as follows:
 \begin{align*}
 \Acolorboxed{&
 (\hat w_n, \hat b_n) \in \argmin_{w \in \R^d, b \in \R}
-\frac 1n \sum_{i=1}^n \log (1 + e^{-Y_i (\langle w,X_i \rangle + b)})\,.}
+\frac 1n \sum_{i=1}^n\left(-Y_i (X_i^T w+ b) +  \log(1+ e^{X_i^Tw + b})\right)\,.}
 \end{align*}
 
 \vspace{.3cm}
