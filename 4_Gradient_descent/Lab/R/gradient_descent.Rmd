@@ -1,0 +1,643 @@
+---
+title: "Introduction to Machine Learning - Optimization"
+author: ""
+date: ""
+
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE) 
+```
+
+
+```{r, warning=FALSE,  message = FALSE}
+library(mvtnorm)
+library(MASS)
+library(plotly)
+library(dplyr)
+```
+
+# 1) Gradient descent
+
+## Simulation 1
+
+Let's simulate a sample of $n=500$ points from a bivariate Gaussian distribution with mean $\mu$ and covariance matrix $\Sigma$ defined as  
+\begin{align*}
+\mu = 
+\begin{pmatrix}
+1  \\
+2 
+\end{pmatrix}, \quad 
+\Sigma = 
+\begin{pmatrix}
+1 & 0.9 \\
+0.9 & 1
+\end{pmatrix}
+\end{align*}
+
+```{r}
+mu <- c(1, 2)
+Sigma <-matrix(c(1, .9, .9, 1), 2, 2)
+X <- rmvnorm(500, mu, Sigma) 
+apply(X, 2, mean)
+
+# rmvnorm generates a sample from a multivariate gaussian distribution
+# the equivalent function is rnorm for a random variable (1dimension)
+head(X)
+dim(X)
+```
+
+We aim at estimating the maximum likelihood estimate of $\mu = (\mu_1, \mu_2)$ assuming that $\Sigma$ is known, using gradient descent.
+
+**1) Write the negative log
+-likelihood and the explicit solution of the maximum likelihood for $(\mu_1, \mu_2)$.**
+
+In the general case of a multivariate Gaussian distribution of dimension $d$, the negative log-likelihood is : 
+$$-\log p(x)= \frac{d}{2} \log(2\pi) + \frac{1}{2}\log(|\Sigma|) +\frac{1}{2}(x-\mu)^\top\Sigma^{-1}(x-\mu) $$
+In the particulare case of a bivariate distribution, with $x = ((x_{i,1},x_{i,2}), 1 \leq i \leq n)$ and $\mu = (\mu_1,\mu_2)$ the negative log likelihood rewrites:
+$$-\log p(x)= n\log(2\pi \sigma_{x_1} \sigma_{x_2}) + \frac{n}{2}\log(1-\rho^2) +\sum_{i=1}^{n}{\frac{1}{2(1-\rho^2)}\left[\frac{x_{i,1}-\mu_1}{\sigma_{x_1}^2} +\frac{x_{i,2}-\mu_2}{\sigma_{x_2}^2} -\frac{2\rho(x_{i,1}-\mu_1)(x_{i,2}-\mu_2)}{\sigma_{x_1}\sigma_{x_2}}\right]}$$
+Where $\rho$ is the correlation between $x_1$ and $x_2$ and 
+
+$$\Sigma= \left[ {\begin{array}{cc}
+   \sigma^2_{x_1} & \rho\sigma_{x_1}\sigma_{x_2} \\
+   \rho\sigma_{x_1}\sigma_{x_2} & \sigma^2_{x_2} \\
+  \end{array} } \right]$$
+In R, we can get the density of a multivariate gaussian distribution using the _dmvnorm_ function, we can visualize it with:
+
+```{r}
+dens <- dmvnorm(X, mu, Sigma)
+kd <- kde2d(X[,1],X[,2], n = 50)
+p <- plot_ly(x = kd$x, y = kd$y, z = kd$z) %>% add_surface()
+p
+# The equivalent function in 1d is the dnorm function and then plot(density()) to represent the density
+```
+
+The negative log likelihood as a function of $\mu=(\mu1, \mu2)$ can be obtained by specifying the argument log = TRUE to take the log of the density and then by summing to get $\sum_{i=1}^{n}p(x_i|\mu)$:
+
+```{r}
+nloglike <- function(mu, X=X, Sigma = Sigma) {
+        dmv <- dmvnorm(X, mu, Sigma, log = TRUE)
+        -sum(dmv)
+}
+```
+
+Let's try a grid of $\mu$ and compute the associate negative log-likelihood:
+```{r}
+nx <- 40
+ny <- 40
+xg <- seq(-5, 5, len = nx)
+yg <- seq(-5, 6, len = ny)
+g <- expand.grid(xg, yg) # g is a matrix where each row is a couple of value $(\mu_1, \mu2)$
+nLL <- apply(g, MARGIN= 1, nloglike, X, Sigma)  # We apply the function nloglike with X and Sigma as argument to each row (MARGIN=1; 2 is for column) of the matrix g
+z <- matrix(nLL, nx, ny) 
+rownames(z)=paste("mu1", round(xg,1), sep = ":")
+colnames(z)=paste("mu2", round(yg,1), sep = ":")
+z[1:5, 1:5]
+# the value in each cell of z corresponds to the negative log-likelihood for a value of $\mu1$ and $\mu2$
+
+# Let's look at the minimum value
+ind <- which(z==min(z), arr.ind=TRUE) # The argument arr.ind= TRUE allows to keep the row number and the colum number, otherwise, you get the index of the minimum with which(z==min(z)) but it consider the matrix as a big vector of size n*p, so that it is more difficult to retrieve the row and colum
+rownames(z)[ind[1]]
+colnames(z)[ind[2]]
+min(z)
+```
+
+Let's visualize the values of the negative log-likelihood with respect to the values of $\mu_1$ and $\mu_2$.
+```{r}
+contour(xg, yg, z, nlevels = 40, xlab = expression(mu[1]), 
+        ylab = expression(mu[2]))
+abline(h = 2, v = 1, lty = 2)
+```
+
+Let's find the minimum using gradient descent.
+
+**2) Write by hand the gradient descent algorithm for $\mu$, describe a gradient descent procedure and implement it. The step size will be first set to $\alpha = 10^{-4}$ but should then be changed to assess its influence on the performance.**
+
+Note that the gradient of 
+$$f_x(\mu) = \frac{1}{2}(x-\mu)^\top\Sigma^{-1}(x-\mu)$$
+is given by 
+$$
+\nabla f_x (\mu) = - \Sigma^{-1}(x-\mu)
+$$
+One step of a gradient descent procedure can be written as
+\begin{align*}
+\mu^{(k+1)} = \mu^{(k)} - \alpha \sum_{i=1}^n \nabla f_{x_i} (\mu^{(k)}). 
+\end{align*}
+Let's implement it with a step size $\alpha$ equals to $10^-4$.
+
+```{r}
+norm <- function(x) x / sqrt(sum(x^2))
+
+# First, one step.
+step <- function(mu, alpha = 1, X=X, Sigma=Sigma) {
+        Sinv <- solve(Sigma)  # this computes the inverse of Sigma: Sigma^{-1}
+        D <- sweep(X, 2, mu, "-") # X-\mu
+        score <- colSums(D) # \sum_i (x_i-\mu)
+        score <- score 
+        mu + alpha * drop(Sinv %*% score) # mu^k+ alpha \Sigma^-1(\sum_i (x_i-\mu)) ; drop transform the matrix of size 2*1 in a vector of size 2
+}
+
+# Let's define the gradient function
+grad<-function(mu, X, Sigma) {
+        Sinv <- solve(Sigma)  # this computes the inverse of Sigma: Sigma^{-1}
+        D <- sweep(X, 2, mu, "-") # X-\mu
+        score <- colSums(D) # \sum_i (x_i-\mu)
+       return(-drop(Sinv %*% score)) # -\Sigma^-1(\sum_i (x_
+}
+
+# We repet the procedure a number of k times
+steep <- function(mu, k = 10,  alpha = 10^-4, X=X, Sigma=Sigma) {
+        resultspara <- list()
+         resultsLogLik <- list()
+         resultsGrad <- list()
+        for(i in 1:k) {
+                resultspara[[i]] <- step(mu, alpha = alpha, X=X, Sigma=Sigma)
+                mu <- resultspara[[i]]
+                resultsLogLik[[i]] <- nloglike(mu, X=X, Sigma = Sigma) # To store the log-likehood
+                resultsGrad[[i]] <- grad(mu, X=X, Sigma = Sigma)
+        }
+        return(list(param = resultspara, LogLik  =  resultsLogLik, Grad =  resultsGrad))
+}
+```
+
+Let's try the function:
+```{r}
+essai <- steep(c(-5, -2), k=60, alpha = 0.0005, X=X, Sigma=Sigma)
+m <- do.call("rbind", essai$param) # the results are in a list, do.call uses rbind to concatenate by rows the elements of the list and have the results in a matrix
+
+m <- rbind(c(-5, -2), m) # OK, we get the values of \hat mu at each steps of the algorithm 
+
+## Let's visualize it:
+contour(xg, yg, z, nlevels = 40, xlab = expression(mu[1]), 
+        ylab = expression(mu[2]))
+abline(h = 2, v = 1, lty = 2) # abline horizontal line at 2 and vertical line at 1
+points(m, pch = 20, type = "b") # type = b, for both points and line
+```
+
+Even with 60 iterations, the gradient descent does not find the minimum. Let's try with more iteration. 
+
+```{r}
+essai <- steep(c(-5, -2), k=200, alpha = 10^-4, X=X, Sigma=Sigma)
+m <- do.call("rbind", essai$param)
+m <- rbind(c(-5, -2), m) 
+contour(xg, yg, z, nlevels = 40, xlab = expression(mu[1]), 
+        ylab = expression(mu[2]))
+abline(h = 2, v = 1, lty = 2)
+points(m, pch = 20, type = "b") 
+```
+
+
+
+**3) Compute the Hessian $H$ of the likelihood. Recall that the condition number is the largest eigenvalue of the Hessian divided by the smallest. Compute the condition number (see eigen function in R). Comment.**
+
+The Hessian matrix can be found given the expression of $\nabla f_x(\mu)$. Indeed, we have $H = \nabla^2 f (\mu) = n\Sigma^{-1}$.
+
+```{r}
+n=500
+res <- eigen(n*solve(Sigma))$values
+conditionnumber = res[1]/res[2]
+conditionnumber
+```
+
+**4) Suggest a step-size that could ensure convergence of the gradient descent.**
+
+```{r}
+essai <- steep(c(-5, -2), k=1000, alpha = (1/res[1]), X=X, Sigma=Sigma)
+m <- do.call("rbind", essai$param)
+m <- rbind(c(-5, -2), m) 
+contour(xg, yg, z, nlevels = 40, xlab = expression(mu[1]), 
+        ylab = expression(mu[2]))
+abline(h = 2, v = 1, lty = 2)
+points(m, pch = 20, type = "b") 
+```
+
+You can also use the linesearch function of the package. 
+
+## Simulation 2
+
+Now, let us generate a sample of $n=500$ points from a bivariate Gaussian distribution with mean $\mu$ and covariance matrix $\Sigma$ defined as  
+\begin{align*}
+\mu = 
+\begin{pmatrix}
+1  \\
+2 
+\end{pmatrix}, \quad 
+\Sigma = 
+\begin{pmatrix}
+1 & 0 \\
+0 & 1
+\end{pmatrix}
+\end{align*}
+
+
+```{r}
+mu <- c(1, 2)
+Sigma2 <-matrix(c(1, 0, 0, 1), 2, 2)
+X2 <- rmvnorm(500, mu, Sigma2) 
+```
+
+**5) Apply the same gradient descent and vizualize it and comment the results with respect to the condition number.**
+
+```{r}
+essai <- steep(c(-5, -2), k=100, alpha = 1, X=X2, Sigma=Sigma2)
+m <- do.call("rbind", essai$param)
+m <- rbind(c(-5, -2), m) 
+nLL2 <- apply(g, 1, nloglike, X2, Sigma2)  
+z2 <- matrix(nLL2, nx, ny) 
+contour(xg, yg, z2, nlevels = 40, xlab = expression(mu[1]), 
+        ylab = expression(mu[2]))
+abline(h = 2, v = 1, lty = 2)
+points(m, pch = 20, type = "b")
+n=500
+res <- eigen(n*solve(Sigma2))$values
+conditionnumber = res[1]/res[2]
+conditionnumber
+```
+
+The condition number is equal to one. The optimization problem here is easy: the gradient descent converges faster than in the previous setting, where variables were correlated. 
+
+In general, when variables are correlated, the optimization problem can become difficult due to the nature of the level set. In the second setting, level sets are circles whose center is the optimum of the function. Thus the gradient is always directed toward the center of the circle, that is the optimum. If we were allowed to tune the step size the gradient descent would converge in only one step!
+
+In the previous setting however, level sets are ellipses and thus gradient are not directed anymore to the center of the ellipses. Therefore even tuning the step size would require more than one step to converge. Since there is only one step size for the two coordinates, it is difficult for the gradient procedure to adjust to both coordinates. 
+Comments: when the data are highly correlated, the log-likelihood surface can become difficult to optimize.
+
+
+# 2) Newton
+
+##  Visualization of Newton in 1 dimension
+
+We generate a function $f$ which is the negative standard Gaussian density $f(x)=-\frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}x^2}$ (in R, given with the function dnorm). The aim is to find the minimum of $f$. 
+
+Newton method makes a quadratic approximation to the target function $f$ at each step of the algorithm. We start with an initial point $x_n=-1.2$. At $x_n$, we use Taylor expansion at order 2, to create the function $g(x) = f(x_n)+ (x-x_n)f'(x_n) + 1/2 (x-x_n)^2 f''(x_n)$, then we minimize $g$.
+
+The general idea is to replace, at each step of the algorithm, the complex function $f$ by a simpler function $g$ (that is easier to optimize), and optimize $g$ to obtain a new position $x_{n+1}$. This process is repeated until convergence. 
+
+We can visualize how Newton method makes its quadratic approximation to the target function easily in one dimension.
+
+```{r}
+x <-rnorm(500, 0, 1)
+plot(x, -dnorm(x), cex = 0.2, ylim = c(-0.6, 0.2))
+xn <- -1.2
+abline(v = xn, lty = 2) # lty =2, for dashed lines
+axis(3, xn, expression(x[n])) # axis takes as first argument an integer specifying which side of the plot the axis is to be drawn on 1=below, 2=left, 3=above and 4=right.
+
+g <- function(x) {
+        -dnorm(xn) + (x-xn) * xn * dnorm(xn) - 0.5 * (x-xn)^2 * (dnorm(xn) - xn * (xn * dnorm(xn)))
+}
+
+points(x, g(x), col=2, cex = 0.1)
+
+op <- optimize(g, c(0, 3)) # optimize find the optimum of a 1d function
+
+abline(v = op$minimum, lty = 2)
+axis(3, op$minimum, expression(x[n+1]))
+```
+
+In the above figure, the next iterate,  $x_{n+1}$  is actually further away from the minimum than our previous iterate $x_n$ . The quadratic approximation that Newton method makes to $f$ is not guaranteed to be good at every point of the function.
+This shows an important characteristic of Newton method, which is not monotone. The successive iterations that Newton method produces are not guaranteed to be improvements in the sense that each iterate is closer to the truth. The tradeoff here is that while Newton method is very fast (quadratic convergence), it can be sometimes unstable. Monotone algorithms that always produce improvements, are more stable, but generally converge at slower rates.
+
+In the next figure, however, we can see that the solution provided by the next approximation,  $x_{n+2}$ , is indeed quite close to the true minimum.
+
+```{r}
+curve(-dnorm(x), -2, 3, lwd = 2, ylim = c(-0.55, .1))
+xn <- -1.2
+op <- optimize(g, c(0, 3)) #  optimize is a univariate function-minimizer which requires that a bounded search-interval be specified.
+abline(v = op$minimum, lty = 2)
+axis(3, op$minimum, expression(x[n+1]))
+
+xn <- op$minimum
+curve(g, -2, 3, add = TRUE, col = 4)
+op <- optimize(g, c(0, 3))
+abline(v = op$minimum, lty = 2)
+axis(3, op$minimum, expression(x[n+2]))
+```
+
+
+It is worth noting that in the rare event that  $f$ is in fact a quadratic polynomial, Newton method will converge in a single step because the quadratic approximation that it makes to  $f$  will be exact. This is the case of the previous example, let's try it.
+
+## Newton for the bivariate Gaussian distribution. 
+
+Let us recall the density of a bivariate Gaussian distribution with mean $\mu$ and covariance $\Sigma$:
+$$p(x) = \frac{1}{2\pi|\Sigma|^{1/2}} e^{-\frac{1}{2}(x-\mu)^\top\Sigma^{-1}(x-\mu)}$$
+Where $|\Sigma|$ is the determinant of the covariance matrix $\Sigma$.
+
+We generate a function $f$ which is the negative log-likelihood of a bivariate Gaussian distribution: 
+$$-\log p(x)= \log(2\pi) + \frac{1}{2}\log(|\Sigma|) +\frac{1}{2}(x-\mu)^\top\Sigma^{-1}(x-\mu) $$
+
+The aim is to find the minimum of $f$.
+
+The _nlm()_ function in R implements Newton method for minimizing a function given a vector of starting values. By default, one does not need to supply the gradient or Hessian functions; they will be estimated numerically by the algorithm. However, for the purposes of improving accuracy of the algorithm, both the gradient and Hessian can be supplied as attributes of the target function.
+
+We can try to apply Newton on the previous exercice on both data sets $X$ and $X2$. Comment the results
+
+```{r}
+# The nlm function takes as an input the function to minimize, then, initial values must be submitted with in the arguments p
+# use?nlm to understand the output
+nlm(nloglike, X, Sigma, p=c(-5,1), print.level=2)
+nlm(nloglike, X2, Sigma2, p=c(-5,1))
+```
+
+## Quasi-Newton
+
+The idea is to replace the Hessian which is expensive with an approximation simpler to compute but still allows the algorithm to converge quickly. The famous method is known as BFGS developed by Broyden, Fletcher, Goldfarb, and Shanno (BFGS).
+In R we can use the function optim.
+
+```{r}
+res <- optim(c(-5, 1),nloglike,  X=X, Sigma=Sigma, method = "BFGS")
+#?optim
+```
+
+The optim() function returns a list with 5 elements  The first element is the convergence code. If convergence is 0, that is good. 
+
+# 3) Optimization for logistic regression
+
+The aim is to implement different optimization methods to solve logistic regression. First, let us simulate an appropriate data set.
+
+Let $(X,Y)$ be a couple of random variables with values in $\mathbb{R}^d \times \{0,1\}$ and satisfying, for all $x \in \mathbb{R}^d$, here $d=2$
+\begin{equation}\label{loi}
+\mathbb{P}(Y=1|X=x)=\frac{\exp(\beta^{\star}_0 + \sum_{j=1}^d \beta^{\star}_j x^{(j)})}{1+\exp(\beta^{\star}_0 + \sum_{j=1}^d \beta^{\star}_j x^{(j)})},
+\end{equation}
+where $X \sim \mathcal{N}({\bf 0}, \Sigma)$, 
+$$
+\Sigma =
+\begin{pmatrix}
+1 & 0.6 \\
+0.6 & 1
+\end{pmatrix}
+$$
+The parameter vector of this model is set to be $\beta^{\star} = (\beta^{\star}_0, \beta^{\star}_1, \beta^{\star}_2) = (1,2,3)$. 
+
+**1) Generate $n = 1000$ observations $(X_i, Y_i)$ according to the model described above.**
+
+```{r}
+# Data generation 
+n = 100
+d=2
+mu = rep(0,d)
+beta_star = 1:3
+
+# generate data from multi-normal distribution
+X <- rmvnorm(n, mean=mu, sigma = matrix(c(1,0.6,0.6,1),2,2))
+X=scale(X)
+X = cbind(rep(1,n), X)
+Y = rbinom(n=n,prob = exp(X%*%beta_star)/(1+exp(X%*%beta_star)),size=1)
+```
+
+Recall that the  log-likelihood of the model is:
+$$
+	\log(L_n(\beta)) =  \sum_{i=1}^n \left(y_i x_i^t \beta
+	- \log(1+ e^{x_i^t
+	\beta})\right)
+$$
+
+where $x_i$ is the $i$th row of the design matrix $X$. We want to estimate the coefficients of the logistic regression using a maximum likelihood estimate, which is the same as minimizing the negative log likelihood.
+
+To find $\hat{\beta}$, we implement a gradient descent algorithm. We first need to compute the gradient of the negative log-likelihood. 
+
+**2) Show that:**
+$$\nabla  \left(\log(L_n(\beta))\right)=   \left(\frac{\partial}{\partial \beta_0}(\beta),\cdots, \frac{\partial}{\partial \beta_d}(\beta)\right) 
+$$
+
+  
+$$
+\frac{\partial \left(\log(L_n(\beta))\right)}{\partial \beta_j}= 
+\sum_{i=1}^n \left(y_i x_{ij}
+	- \frac{x_{ij} e^{x_i^t
+	\beta}}{(1+ e^{x_i^t
+	\beta})}   \right) 
+$$
+
+
+
+
+
+4) The gradient descent procedure proceeds as follows: 
+
+- Set $\beta^{(0)} = (0, 0, 0)$, $k=1$
+
+- While ($k \leq iter$) do 
+
+i)  $\beta^{(k)} = \beta^{(k-1)} - \frac{1}{C} \nabla f(\beta^{(k-1)})$
+
+ii) $k = k+1$
+
+**The best theoretical step $C$ for logistic regression is given by the largest eigenvalue of the Hessian matrix $\nabla^2 f$. Prove that**
+$$
+C = \lambda_{max}\Big(\frac{1}{4n} X^TX \Big)
+$$
+
+**where $\lambda_{max}(M)$ is the largest eigenvalue of the matrix $M$.**
+
+**5) Implement the gradient descent. **
+
+
+```{r}
+#Compute the log likelihood
+neg_logistic_likelihood = function(X, Y, beta){
+  log <- - (1/nrow(X))*sum(Y * X%*%beta - log(1+exp(X%*%beta)))
+  return(log)
+}
+
+#Compute the gradient of the log likelihood at beta
+neg_logistic_grad = function(X,Y,beta){
+ grad <- - (1/nrow(X))*( t(X)%*%(Y -  exp(X%*%beta)/(1+exp(X%*%beta))))
+ return(grad)
+}
+
+# Compute the Lipschitz constant of the gradient of f
+lipschitz_grad_f = function(X){
+  return(max(eigen((1/(4*nrow(X)))*(X%*%t(X)))$values))
+}
+
+
+#Gradient descent algorithm
+
+#intializing coefficients
+beta = rep(0, d+1)
+#Number of iterations for gradient descent 
+nb_iter = 100
+#Vector to store the value of the negative log likelihood
+grad_descent_neg_log_like = rep(0, nb_iter)
+
+#Calculation time
+T1<-Sys.time()
+
+Lipschitz_const = lipschitz_grad_f(X)
+
+for (j in c(1:nb_iter)){
+  grad_descent_neg_log_like[j] = neg_logistic_likelihood(X,Y, beta)
+  beta1 = beta - (1/Lipschitz_const)*neg_logistic_grad(X,Y,beta)
+  beta=beta1
+  #print(beta1)
+}
+T2<-Sys.time()
+Tdiff_grad_descent= difftime(T2, T1)
+beta_grad_descent = beta
+#print(beta)
+```
+
+
+
+We now want to implement a stochastic gradient descent to solve the same optimization problem. First, note that the negative log likelihood can be rewritten as 
+$$
+f(\beta) = \frac{1}{n} \sum_{i=1}^n f_i(\beta)
+$$
+
+where $f_i$ only depends on the observations $(x_i, y_i)$.
+The stochastic gradient descent then works as the gradient descent but the updated rule is defined as
+$$
+\beta^{(k)} = \beta^{(k-1)} - \frac{\eta}{\sqrt{k+1}}  \nabla f_i(\beta^{(k-1)}),
+$$
+where $i$ is randomly chosen among $\{1, \cdots, n \}$ at each iteration. 
+
+**6) Implement the stochastic gradient descent algorithm with step $\eta = 0.1$. Play with different values of $\eta$ and see how it impacts the gradient descent procedure. **
+
+```{r}
+#Compute the log likelihood
+neg_logistic_likelihood = function(X, Y, beta){
+  log <- - (1/nrow(X))*sum(Y * X%*%beta - log(1+exp(X%*%beta)))
+  return(log)
+}
+
+#Compute the gradient of the individual log likelihood at beta
+neg_logistic_gradi = function(X,Y,beta,i){
+ gradi <- -(1/nrow(X))*(Y[i] - exp(X[i,]%*%beta)/(1+exp(X[i,]%*%beta)))[1,1]*X[i,]
+ return(gradi)
+}
+
+# aa=do.call(rbind,lapply(1:100, function (i) logistic_gradi(X,Y, beta_star,i)))
+#apply(aa,2, sum)/100
+ 
+#Gradient descent algorithm
+
+#intializing coefficients
+beta = rep(0, d+1)
+#Number of iterations for gradient descent 
+nb_iter_sto = n * nb_iter
+#Vector to store the value of the negative log likelihood
+sto_grad_descent_neg_log_like = rep(0, nb_iter_sto)
+
+#sgd step
+eta = 10
+#Calculation time
+T1<-Sys.time()
+
+
+for (j in c(1:nb_iter_sto)){
+  sto_grad_descent_neg_log_like[j] = neg_logistic_likelihood(X,Y, beta)
+  i <- sample(1:n,1)
+  beta1 = beta - (eta/sqrt(j+1))*neg_logistic_gradi(X,Y,beta,i)
+  beta=beta1
+  #print(beta1)
+  
+}
+T2<-Sys.time()
+Tdiff_sto_grad_descent= difftime(T2, T1)
+beta_sto_grad_descent = beta
+#print(beta)
+```
+
+We now want to implement a stochastic average gradient descent. At each iteration, let $j$ be drawn uniformly among $\{1, \cdots, n \}$. Then, the updating rule is defined as 
+$$
+\beta^{(k)} = \beta^{(k-1)} - \frac{1}{C}  \sum_{i=1}^n z_i^{(k-1)},
+$$
+where 
+$$
+z_i^{(k-1)} = \left\lbrace
+\begin{array}{l}
+z_i^{(k-2)} ~\textrm{if}~i \neq j\\
+\nabla f_i(\beta^{(k-1)}) ~\textrm{if}~ i = j
+\end{array}
+\right.
+$$
+
+**7) Starting from $z_i^{(0)} = 0$ for all $i$, implement the stochastic average gradient descent. **
+
+```{r}
+
+#Compute the log likelihood
+neg_logistic_likelihood = function(X, Y, beta){
+  log <- - (1/nrow(X))*sum(Y * X%*%beta - log(1+exp(X%*%beta)))
+  return(log)
+}
+
+#Compute the gradient of the individual log likelihood at beta
+neg_logistic_gradi = function(X,Y,beta,i){
+ gradi <- -(Y[i] - exp(X[i,]%*%beta)/(1+exp(X[i,]%*%beta)))[1,1]*X[i,]
+ return(gradi)
+}
+
+# Compute the Lipschitz constant of the gradient of f
+lipschitz_grad_f = function(X){
+  return(max(eigen((1/(4*nrow(X)))*(X%*%t(X)))$values))
+}
+
+#Gradient descent algorithm
+
+#intializing coefficients
+beta = rep(0, d+1)
+#Number of iterations for gradient descent 
+nb_iter_sto = n *nb_iter
+#Vector to store the value of the negative log likelihood
+avg_grad_descent_neg_log_like = rep(0, nb_iter_sto)
+#store the individual gradient for Average gradient calculation
+z <- matrix(0, nrow=n,ncol=length(beta))
+
+#Calculation time
+T1<-Sys.time()
+
+Lipschitz_const = lipschitz_grad_f(X)
+
+
+for (j in c(1:nb_iter_sto)){
+  avg_grad_descent_neg_log_like[j] = neg_logistic_likelihood(X,Y, beta)
+  i <- sample(1:n,1)
+  beta1 = beta - (1/nrow(X))*(1/(16*Lipschitz_const))*(colSums(z) - z[i,] + neg_logistic_gradi(X,Y,beta,i))
+  beta=beta1
+  z[i,] <- neg_logistic_gradi(X,Y,beta,i)
+  #print(beta1)
+  
+}
+T2<-Sys.time()
+Tdiff_avg_grad_descent= difftime(T2, T1)
+beta_avg_grad_descent = beta
+#print(beta)
+```
+
+**8) Compare the three gradient descent methods with each other and with the results given in _glm_ (glm uses Newton). (compare results, time, etc).**
+
+```{r}
+c(1, n*c(1:nb_iter))
+temp_sto_grad_descent_neg_log_like = sto_grad_descent_neg_log_like[c(1, n*c(1:nb_iter))]
+matplot(c(1:nb_iter), cbind(grad_descent_neg_log_like[1:nb_iter],sto_grad_descent_neg_log_like[1:nb_iter], avg_grad_descent_neg_log_like[1:nb_iter]), type = "l", lty=1, xlab="number of iterations", ylab="negative log likelihood")
+legend("topright", inset=.02, legend=c("gradient descent", "stochastic gradient descent", "average stochastic gradient descent"), pch=1, col=c(1,2,3))
+```
+
+```{r}
+
+
+
+n*c(1:nb_iter)
+temp_sto_grad_descent_neg_log_like = sto_grad_descent_neg_log_like[c(1, n*c(1:nb_iter))]
+temp_avg_grad_descent_neg_log_like = avg_grad_descent_neg_log_like[c(1, n*c(1:nb_iter))]
+
+
+matplot(c(1:nb_iter), cbind(grad_descent_neg_log_like[1:nb_iter],temp_sto_grad_descent_neg_log_like[1:nb_iter], temp_avg_grad_descent_neg_log_like[1:nb_iter]), type = "l", lty=1, xlab="Number of epochs", ylab="negative log likelihood")
+legend("topright", inset=.02, legend=c("gradient descent", "stochastic gradient descent", "average stochastic gradient descent"), pch=1, col=c(1,2,3))
+```
+
+
+
+```{r}
+glm_result = glm(Y ~X[,2] + X[,3] ,family = binomial)
+beta_glm = glm_result$coefficients
+beta_glm
+
+norm_gd = norm(- neg_logistic_grad(X, Y, beta_grad_descent))
+norm_sgd = norm(- neg_logistic_grad(X, Y, beta_sto_grad_descent))
+norm_avg = norm(- neg_logistic_grad(X, Y, beta_avg_grad_descent))
+norm_glm = norm(- neg_logistic_grad(X, Y, beta_glm))
+
+
+```
