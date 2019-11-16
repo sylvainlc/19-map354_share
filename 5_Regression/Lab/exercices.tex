@@ -164,9 +164,9 @@ Left as an exercise.
 \end{enumerate}
 
 \subsection*{Regression: prediction of a new observation}
-Consider the regression model given, for all $1\leqslant i\leqslant n$, by
+Consider the regression model given by
 $$
-Y_{i} = X\beta_{\star}+ \xi_{i}\eqsp,
+Y = X\beta_{\star}+ \xi\eqsp,
 $$
 where $X\in\rset^{n\times d}$ the $(\xi_{i})_{1\leqslant i \leqslant n}$ are i.i.d. centered Gaussian random variables with variance $\sigma_{\star}^2$. Assume that $X^TX$ has full rank and that $\beta_\star$ and $\sigma_{\star}^2$ are estimated by 
 $$
@@ -179,7 +179,22 @@ Let $x_\star \in\rset^d$ and assume that its associated observation $Y_\star = x
 \vspace{.2cm}
 
 {\em
-Correction soon.
+By definition of $\widehat \beta_n $,
+$$
+\widehat Y_\star - x_\star^T\beta_\star = x_\star^T (\widehat\beta_n - \beta_\star)\,,
+$$
+so that $\bE[\widehat Y_\star] =  x_\star^T\beta_\star$ and
+$$
+\bE[(\widehat Y_\star - x_\star^T\beta_\star)^2] = \mathbb{V}[\widehat Y_\star] = x_\star^T \mathbb{V}[\widehat\beta_n]x_\star\,.
+$$
+On the other hand,
+$$
+\mathbb{V}[\widehat\beta_n] = (X^TX)^{-1}X^T \mathbb{V}[Y] X(X^TX)^{-1} = \sigma^2(X^TX)^{-1}\,.
+$$
+Therefore,
+$$
+\bE[(\widehat Y_\star - x_\star^T\beta_\star)^2] = \sigma^2x_\star^T(X^TX)^{-1}x_\star\,.
+$$
 }
 
 \item  Provide a confidence interval for $x_\star^T\beta_\star$ with statistical significiance $1-\alpha$ for $\alpha\in(0,1)$?
