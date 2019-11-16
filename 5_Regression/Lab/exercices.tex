@@ -1,0 +1,329 @@
+\documentclass[a4paper,10pt,fleqn]{article}
+
+\usepackage{a4wide,amsmath,amsthm,amssymb,bbm,fancyhdr}
+\usepackage{ifthen,color,enumerate,comment,dsfont,pdfsync,framed,todonotes,enumitem}
+\newboolean{corrige}
+\setboolean{corrige}{true}
+
+\newtheoremstyle{styleQuestion}
+  {6pt}% space above
+  {6pt}% space below
+  {\sffamily}%body font
+  {13.5pt}%indent amount
+  {\sffamily}%Theorem head
+  {.}%punctuation
+  {0.5em}%space after theorem head
+  {}
+
+
+\ifthenelse{\boolean{corrige}}%
+ {\theoremstyle{styleQuestion}%
+ \newtheorem{question}{}}%
+ {\theoremstyle{styleQuestion}%
+ \newtheorem{question}{}}
+\ifthenelse{\boolean{corrige}}%
+   {\renewenvironment{comment}%
+   %{\begin{list}{}{\setlength{\leftmargin}{0pt}\setlength{\rightmargin}{0pt}}\item[]\ignorespaces\begin{sffamily}\small\textbf{Corrigé. \footnotesize } }{\hfill\qed\end{sffamily}\unskip\end{list} }}
+   { \noindent \\ \textbf{Solution.}\begin{leftbar} \footnotesize}{\hfill \qed \end{leftbar}}}
+   {}
+
+\newcommand{\titre}[1]{\textbf{\textsc{#1}}}
+
+\RequirePackage[T1]{fontenc}
+
+\usepackage[latin1]{inputenc}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\newcommand{\thisyear}{PC9}
+\usepackage{enumitem}
+\newcommand{\eqsp}{\,}
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\calF}{\mathcal{F}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\rset}{\ensuremath{\mathbb{R}}}
+\renewcommand{\P}{\ensuremath{\operatorname{P}}}
+\newcommand{\bP}{\mathbb{P}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\rme}{\ensuremath{\mathrm{e}}}
+\newcommand{\calH}{\ensuremath{\mathcal{H}}}
+\newcommand{\xset}{\ensuremath{\mathsf{X}}}
+\newcommand{\V}{\ensuremath{\mathbb{V}}}
+\newcommand{\Sb}{\ensuremath{\mathbb{S}}}
+\newcommand{\gaus}{\ensuremath{\mathcal{N}}}
+\newcommand{\HH}{\ensuremath{\mathcal{H}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\W}{\ensuremath{\mathcal{W}}}
+\newcommand{\X}{\ensuremath{\mathcal{X}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\dlim}{\ensuremath{\stackrel{\mathcal{L}}{\longrightarrow}}}
+\newcommand{\plim}{\ensuremath{\stackrel{\mathrm{P}}{\longrightarrow}}}
+\newcommand{\PP}{\ensuremath{\mathbb{P}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\bE}{\mathbb{E}}
+\newcommand{\pa}[1]{\left(#1\right)}
+\newcommand{\hatk}{\widehat K}
+\newcommand{\f}{\varphi}
+\newcommand{\Id}{\textsf{Id}}
+\newcommand{\bfU}{\mathbf{U}}
+\newcommand{\bfX}{\mathbf{X}}
+\newcommand{\bfs}{\mathbf{\Sigma}}
+\newcommand{\bfA}{\mathbf{A}}
+\newcommand{\bfV}{\mathbf{V}}
+\newcommand{\bfB}{\mathbf{B}}
+\newcommand{\bfI}{\mathbf{I}}
+\newcommand{\bfD}{\mathbf{D}}
+\newcommand{\bfK}{\mathbf{K}}
+\newcommand{\argmin}{\mathop{\textrm{argmin}}}
+\newcommand{\argmax}{\mathop{\textrm{argmax}}}
+\newcommand{\crit}{\mathop{\textrm{crit}}}
+\newcommand{\C}{\mathcal{C}}
+\newcommand{\pc}{\pi_{\mathcal{C}}}
+
+
+% Style
+\pagestyle{fancyplain}
+\renewcommand{\sectionmark}[1]{\markright{#1}}
+\renewcommand{\subsectionmark}[1]{}
+\lhead[\fancyplain{}{\thepage}]{\fancyplain{}{\footnotesize {\sf
+MAP569 Machine Learning II, \thisyear %/ \rightmark
+}}}
+\rhead[\fancyplain{}{\footnotesize {\sf MAP534 Introduction to machine learning, \thisyear %/ \rightmark
+}}]{\fancyplain{}{\thepage}}
+\cfoot[\fancyplain{}{}]{\fancyplain{}{}}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+\parindent=0mm
+
+\newtheorem{theorem}{Theorem}
+
+% Titre
+\title{{\bf MAP534 Introduction to machine learning}}
+\author{{\em Linear regression, penalization, kernel regression}}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+
+
+
+\section*{Gaussian vectors}
+\begin{enumerate}
+\item Let $X$ be a Gaussian vector with mean $\mu\in\rset^n$ and definite positive covariance matrix $\Sigma$. Pove that the characteristic function of $X$ is given, for all $t\in\rset^n$, by
+$$
+\bE[\rme^{i\langle t\eqsp;\eqsp X\rangle}] = \rme^{i\langle t\eqsp;\eqsp \mu\rangle - t^T\Sigma t /2}\eqsp.
+$$
+
+\vspace{.2cm}
+
+{\em
+Only requires to compute the mean and variance of the Gaussian random variable $\langle t\eqsp;\eqsp X\rangle$. 
+}
+
+
+\item Let $\varepsilon$ be a random variable in $\{-1,1\}$ such that $\bP(\varepsilon = 1) = 1/2$. If $(X,Y)^T\sim \mathcal{N}(0,I_2)$ explain why the following vectors are or are not Gaussian vectors.
+\begin{enumerate}
+\item $(X,\varepsilon X)$\eqsp.
+
+{\em
+Not Gaussian since the probability that  $X +\varepsilon X = 0$ is $1/2$.
+}
+
+\item $(X,\varepsilon Y)$\eqsp.
+
+{\em
+Gaussian since coordinates are independent Gaussian random variables.
+}
+
+\item $(X,\varepsilon X + Y)$\eqsp.
+
+{\em
+Not Gaussian since the characteristic function of $(1+\varepsilon) X + Y)$ is not the Gaussian characteristic function.
+}
+
+\item $(X,X + \varepsilon Y)$\eqsp.
+
+{\em
+Gaussian as a linear transform of $(b)$.
+}
+
+\end{enumerate}
+
+\item Let $X$ be a Gaussian vector in $\rset^n$ with mean $\mu\in\rset^n$ and covariance matrix $\sigma^2 I_n$. Prove that the random variables $\bar X_n$ and $\widehat \sigma^2_n$ defined as
+$$
+\bar X_n = \frac{1}{n}\sum_{i=1}^n X_i\quad \mathrm{and} \quad \widehat \sigma^2_n = \frac{1}{n-1}\sum_{i=1}^n (X_i - \bar X_n)^2
+$$
+are independent.
+
+\vspace{.2cm}
+
+{\em
+Left as an exercise.
+}
+\end{enumerate}
+
+\subsection*{Regression: prediction of a new observation}
+Consider the regression model given, for all $1\leqslant i\leqslant n$, by
+$$
+Y_{i} = X\beta_{\star}+ \xi_{i}\eqsp,
+$$
+where $X\in\rset^{n\times d}$ the $(\xi_{i})_{1\leqslant i \leqslant n}$ are i.i.d. centered Gaussian random variables with variance $\sigma_{\star}^2$. Assume that $X^TX$ has full rank and that $\beta_\star$ and $\sigma_{\star}^2$ are estimated by 
+$$
+\widehat \beta_n = (X^TX)^{-1}X^TY\quad\mathrm{and}\quad \widehat \sigma^2_n =\frac{\|Y - X\widehat \beta_n \|^2}{n-d}\eqsp.
+$$
+Let $x_\star \in\rset^d$ and assume that its associated observation $Y_\star = x_\star^T\beta_\star + \varepsilon_\star$ is predicted by $\widehat Y_\star = x_\star^T\widehat \beta_n$.
+\begin{enumerate}
+\item  Provide the expression of $\bE[(\widehat Y_\star - x_\star^T\beta_\star)^2]$?
+
+\vspace{.2cm}
+
+{\em
+Correction soon.
+}
+
+\item  Provide a confidence interval for $x_\star^T\beta_\star$ with statistical significiance $1-\alpha$ for $\alpha\in(0,1)$?
+
+\vspace{.2cm}
+
+{\em
+Correction soon.
+}
+\end{enumerate}
+
+\subsection*{Kernels}
+ Let $\calH$ be a RKHS associated with a positive definite kernel $k: \xset\times \xset \to \rset$.
+\begin{enumerate}
+\item  Prove that for all $(x,y)\in\xset\times \xset$, 
+$$
+|f(x)-f(y)|\leqslant \|f\|_{\calH}\|k(x,\cdot)-k(y,\cdot)\|_{\calH}\eqsp.
+$$
+
+\vspace{.2cm}
+
+{\em
+The proof follows from Cauchy-Schwarz inequality and the fact that $f(x) = \langle f, k(x,\cdot)\rangle$.
+}
+
+\item  Prove that the kernel $k$ associated with $\calH$ is unique, i.e. if $\widetilde k$ is another potitive definite kernel satisfying the RKHS properties for $\calH$, then $k = \widetilde k$.
+
+\vspace{.2cm}
+
+{\em
+Write, for all $x\in\xset$,
+$$
+\|k(x,\cdot) - \widetilde k(x,\cdot)\|^2 = \langle k(x,\cdot) - \widetilde k(x,\cdot),k(x,\cdot) - \widetilde k(x,\cdot)\rangle = k(x,x) - \widetilde k(x,x) +  \widetilde k(x,x) - k(x,x)= 0\,.
+$$
+}
+
+\item  Prove that  for all $x\in\xset$, the function defined on $\calH$ by $\delta_x: f \mapsto f(x)$ is continuous.
+
+\vspace{.2cm}
+
+{\em
+Left as an exercise.
+}
+\end{enumerate}
+
+
+\subsection*{Penalized kernel regression}
+Consider the regression model given, for all $1\leqslant i\leqslant n$, by
+$$
+Y_{i}=f^*(X_{i})+\xi_{i}\eqsp,
+$$
+where for all $1\leqslant i\leqslant n$, $X_i\in\mathsf{X}$, and the $(\xi_{i})_{1\leqslant i \leqslant n}$ are i.i.d. centered Gaussian random variables with variance $\sigma^2$. In this exercise, $f^*$ is estimated by
+$$
+\widehat f_n=\argmin_{f\in\mathcal{H}}\left\{{1\over n}\sum_{i=1}^n(Y_{i}-f(X_{i}))^2+{\lambda\over n} \|f\|_{\mathcal{H}}^2\right\}\eqsp,
+$$
+with $\lambda>0$  and $\mathcal{H}$  a RKHS on $\mathsf{X}$ with symmetric positive definite kernel $k$.
+\begin{enumerate}
+\item Check that $\widehat f(x)=\sum_{j=1}^n\widehat \beta_{n,j}k(X_{j},x)$ where $\widehat \beta_n$ is solution to
+$$
+\widehat \beta_n =\argmin_{\beta\in\R^n}\left\{\|y-K\beta\|^2+{\lambda} \beta^TK\beta\right\}\eqsp,
+$$
+with $K$ defined, for all $1\leqslant i,j\leqslant n$, by $K_{i,j}=k (X_{i},X_{j})$.  Provide the explicit expression of $\widehat \beta_n$ when $K$ is nonsingular.
+
+\vspace{.2cm}
+
+{\em
+ First, we prove that $\widehat f$ belongs to $V = \textrm{Span}(k(x_i, \cdot), i=1, \hdots, n)$. Take $f \in \mathcal{H}$ and set $f = f_V + f_{V^{\perp}}$ where $f_V \in V$ and $f_{V^{\perp}} \in V^{\perp}$. Therefore
+		\begin{align*}
+			\frac{1}{n} \sum_{i=1}^n \Big( y_i - f(x_i) \Big)^2 + \frac{\lambda}{n} |f|_{\mathcal{H}}^2
+			& = 	\frac{1}{n} \sum_{i=1}^n \Big( y_i - f_V(x_i) \Big)^2 + \frac{\lambda}{n} \Big( |f_V|_{\mathcal{H}}^2 + |f_{V^{\perp}}|_{\mathcal{H}}^2 \Big),
+		\end{align*}	
+		since, by definition of $V^{\perp}$, for all $1 \leq i \leq n$,  
+		$$
+		f_{V^{\perp}}(x_i) = \langle f_{V^{\perp}} , k(x_i, \cdot) \rangle = 0. 
+		$$
+		Thus the initial optimization problem can be written as
+		\begin{align}
+			\widehat f=\argmin_{f\in V}\left\{{1\over n}\sum_{i=1}^n(y_{i}-f(x_{i}))^2+{\lambda\over n} |f|_{\mathcal{H}}^2\right\}. \label{ridge_optim}
+		\end{align}
+		In other words, there exist $\beta_j$ such that, for all $x$,
+		\begin{align*}
+			\widehat{f}(x) = \sum_{j=1}^n \widehat{\beta}_j k(x_j, x).
+		\end{align*}
+		Injecting this expression into (\ref{ridge_optim}), we get
+		\begin{align*}
+			{1\over n}\sum_{i=1}^n(y_{i}-f(x_{i}))^2+{\lambda\over n} |f|_{\mathcal{H}}^2 
+			& = {1\over n}\sum_{i=1}^n(y_{i}-\sum_{j=1}^n \beta_j k(x_j, x_i))^2+{\lambda\over n} \langle \sum_{j=1}^n \beta_j k(x_j, \cdot), \sum_{i=1}^n \beta_i k(x_i, \cdot) \rangle,
+		\end{align*}
+	which gives the result, since 
+	\begin{align*}
+		\langle \sum_{j=1}^n \beta_j k(x_j, \cdot), \sum_{i=1}^n \beta_i k(x_i, \cdot) \rangle & = \sum_{i,j=1}^n \beta_i \beta_j k(x_i, x_j).
+	\end{align*}
+
+Let 
+		\begin{align*}
+			L(\beta) = \| y - K \beta\|_2^2 + \lambda \beta^T K \beta.
+		\end{align*}
+		The gradient of $L$ is then given by
+		\begin{align*}
+			\nabla L (\beta) & = -2K^T (y - K \beta) + \lambda (K \beta + K^T \beta)  \\
+			& = -2K(y-K \beta) + 2 \lambda K \beta.
+	\end{align*}
+	The minimum $\widehat{\beta}$ of $L$ satisfies 
+	\begin{align*}
+		\Leftrightarrow & -2K(y-K \widehat{\beta}) + 2 \lambda K \widehat{\beta} = 0\\
+		\Leftrightarrow & \widehat{\beta} = (K + \lambda I)^{-1} y.
+	\end{align*}
+}
+\item  Check that 
+$$
+K\widehat \beta_n= \sum_{i=1}^n {\lambda_{i}\over \lambda_{i}+\lambda} \langle Y_i, u_{i}\rangle u_{i}.
+$$
+
+
+\vspace{.2cm}
+
+{\em
+Since $(u_i)_{1 \leq i \leq n}$ is an orthonormal basis of $\R^n$, one can write  
+		\begin{align*}
+			K \widehat{\beta} & = \sum_{i=1}^n \langle K \widehat{\beta}, u_i\rangle u_i\\
+			& = \sum_{i=1}^n \langle K (K+\lambda I)^{-1}y, u_i\rangle u_i\\
+			& = \sum_{i=1}^n \langle y, (K+\lambda I)^{-1} K  u_i\rangle u_i\\
+			& = \sum_{i=1}^n \frac{\lambda_i }{\lambda + \lambda_i} \langle y, u_i \rangle u_i.
+		\end{align*}
+}
+\item Prove that
+$$
+\V[K\widehat \beta_n]=\sum_{i=1}^n \left(\lambda_{i}\sigma\over \lambda_{i}+\lambda\right)^2u_{i}u_{i}'\eqsp.
+$$
+
+\vspace{.2cm}
+
+{\em
+Since $\widehat{\beta} = (K + \lambda I)^{-1}y$, 
+		\begin{align*}
+			\C (K \widehat{\beta}) & = K \C \left( (K + \lambda I)^{-1} y \right) K'\\
+			& = K (K + \lambda I)^{-1} \C (y) (K + \lambda I)^{-1} K\\
+			& = \sigma^2 K^2 (K + \lambda I)^{-2}\\
+			& = \sum_{i=1}^n \left( \frac{\lambda_i \sigma }{\lambda_i + \lambda}\right)^2 u_i u_i^T,
+		\end{align*}
+	using the eigenvector decomposition of $K$.
+}
+\end{enumerate}
+
+
+
+\end{document} 
