@@ -139,7 +139,7 @@ Gaussian since coordinates are independent Gaussian random variables.
 \item $(X,\varepsilon X + Y)$\eqsp.
 
 {\em
-Not Gaussian since the characteristic function of $(1+\varepsilon) X + Y)$ is not the Gaussian characteristic function.
+Not Gaussian since the characteristic function of $(1+\varepsilon) X + Y$ is not the Gaussian characteristic function.
 }
 
 \item $(X,X + \varepsilon Y)$\eqsp.
@@ -202,7 +202,14 @@ $$
 \vspace{.2cm}
 
 {\em
-Correction soon.
+By the first question, $\widehat Y_\star$ is a Gaussian random variable with mean $x_\star^T\beta_\star$ and variance $\sigma^2x_\star^T(X^TX)^{-1}x_\star$. If $z_{1-\alpha/2}$ is the quantile of order $1-\alpha/2$ of the standard Gaussian variable,
+$$
+\mathbb{P}\left(\frac{\left|\widehat Y_\star-x_\star^T\beta_\star\right|}{\sigma(x_\star^T(X^TX)^{-1}x_\star)^{1/2}}\leqslant z_{1-\alpha/2}\right)\geqslant 1-\alpha\,.
+$$
+Therefore, with probability larger than $1-\alpha$,
+$$
+x_\star^T\beta_\star \in \left(\widehat Y_\star - \sigma(x_\star^T(X^TX)^{-1}x_\star)^{1/2}z_{1-\alpha/2}\,;\, \widehat Y_\star + \sigma(x_\star^T(X^TX)^{-1}x_\star)^{1/2}z_{1-\alpha/2}\right)\,.
+$$
 }
 \end{enumerate}
 
@@ -227,7 +234,7 @@ The proof follows from Cauchy-Schwarz inequality and the fact that $f(x) = \lang
 {\em
 Write, for all $x\in\xset$,
 $$
-\|k(x,\cdot) - \widetilde k(x,\cdot)\|^2 = \langle k(x,\cdot) - \widetilde k(x,\cdot),k(x,\cdot) - \widetilde k(x,\cdot)\rangle = k(x,x) - \widetilde k(x,x) +  \widetilde k(x,x) - k(x,x)= 0\,.
+\|k(x,\cdot) - \widetilde k(x,\cdot)\|_{\calH}^2 = \langle k(x,\cdot) - \widetilde k(x,\cdot),k(x,\cdot) - \widetilde k(x,\cdot)\rangle = k(x,x) - \widetilde k(x,x) +  \widetilde k(x,x) - k(x,x)= 0\,.
 $$
 }
 
@@ -261,51 +268,47 @@ with $K$ defined, for all $1\leqslant i,j\leqslant n$, by $K_{i,j}=k (X_{i},X_{j
 \vspace{.2cm}
 
 {\em
- First, we prove that $\widehat f$ belongs to $V = \textrm{Span}(k(x_i, \cdot), i=1, \hdots, n)$. Take $f \in \mathcal{H}$ and set $f = f_V + f_{V^{\perp}}$ where $f_V \in V$ and $f_{V^{\perp}} \in V^{\perp}$. Therefore
+Let  $V = \textrm{Span}\{k(X_i, \cdot), i=1, \hdots, n\}$,  $f \in \mathcal{H}$ and set $f = f_V + f_{V^{\perp}}$ where $f_V \in V$ and $f_{V^{\perp}} \in V^{\perp}$. Therefore
 		\begin{align*}
-			\frac{1}{n} \sum_{i=1}^n \Big( y_i - f(x_i) \Big)^2 + \frac{\lambda}{n} |f|_{\mathcal{H}}^2
-			& = 	\frac{1}{n} \sum_{i=1}^n \Big( y_i - f_V(x_i) \Big)^2 + \frac{\lambda}{n} \Big( |f_V|_{\mathcal{H}}^2 + |f_{V^{\perp}}|_{\mathcal{H}}^2 \Big),
+			\frac{1}{n} \sum_{i=1}^n \Big( Y_i - f(X_i) \Big)^2 + \frac{\lambda}{n} \|f\|_{\mathcal{H}}^2
+			& = 	\frac{1}{n} \sum_{i=1}^n \Big( Y_i - f_V(X_i) \Big)^2 + \frac{\lambda}{n} \Big( \|f_V\|_{\mathcal{H}}^2 + \|f_{V^{\perp}}\|_{\mathcal{H}}^2 \Big)\,,
 		\end{align*}	
-		since, by definition of $V^{\perp}$, for all $1 \leq i \leq n$,  
+		since, by definition of $V^{\perp}$, for all $1 \leqslant i \leqslant n$,  
 		$$
-		f_{V^{\perp}}(x_i) = \langle f_{V^{\perp}} , k(x_i, \cdot) \rangle = 0. 
+		f_{V^{\perp}}(X_i) = \langle f_{V^{\perp}} , k(X_i, \cdot) \rangle = 0\,. 
 		$$
-		Thus the initial optimization problem can be written as
-		\begin{align}
-			\widehat f=\argmin_{f\in V}\left\{{1\over n}\sum_{i=1}^n(y_{i}-f(x_{i}))^2+{\lambda\over n} |f|_{\mathcal{H}}^2\right\}. \label{ridge_optim}
-		\end{align}
-		In other words, there exist $\beta_j$ such that, for all $x$,
-		\begin{align*}
-			\widehat{f}(x) = \sum_{j=1}^n \widehat{\beta}_j k(x_j, x).
-		\end{align*}
-		Injecting this expression into (\ref{ridge_optim}), we get
-		\begin{align*}
-			{1\over n}\sum_{i=1}^n(y_{i}-f(x_{i}))^2+{\lambda\over n} |f|_{\mathcal{H}}^2 
-			& = {1\over n}\sum_{i=1}^n(y_{i}-\sum_{j=1}^n \beta_j k(x_j, x_i))^2+{\lambda\over n} \langle \sum_{j=1}^n \beta_j k(x_j, \cdot), \sum_{i=1}^n \beta_i k(x_i, \cdot) \rangle,
-		\end{align*}
-	which gives the result, since 
-	\begin{align*}
-		\langle \sum_{j=1}^n \beta_j k(x_j, \cdot), \sum_{i=1}^n \beta_i k(x_i, \cdot) \rangle & = \sum_{i,j=1}^n \beta_i \beta_j k(x_i, x_j).
-	\end{align*}
-
-Let 
-		\begin{align*}
-			L(\beta) = \| y - K \beta\|_2^2 + \lambda \beta^T K \beta.
-		\end{align*}
-		The gradient of $L$ is then given by
-		\begin{align*}
-			\nabla L (\beta) & = -2K^T (y - K \beta) + \lambda (K \beta + K^T \beta)  \\
-			& = -2K(y-K \beta) + 2 \lambda K \beta.
-	\end{align*}
-	The minimum $\widehat{\beta}$ of $L$ satisfies 
-	\begin{align*}
-		\Leftrightarrow & -2K(y-K \widehat{\beta}) + 2 \lambda K \widehat{\beta} = 0\\
-		\Leftrightarrow & \widehat{\beta} = (K + \lambda I)^{-1} y.
-	\end{align*}
-}
-\item  Check that 
+		Thus, the initial optimization problem can be written as
 $$
-K\widehat \beta_n= \sum_{i=1}^n {\lambda_{i}\over \lambda_{i}+\lambda} \langle Y_i, u_{i}\rangle u_{i}.
+\widehat f=\argmin_{f\in V}\left\{{1\over n}\sum_{i=1}^n(Y_{i}-f(X_{i}))^2+{\lambda\over n} \|f\|_{\mathcal{H}}^2\right\}.
+$$
+Therefore, there exist $\beta\in\mathbb{R}^n$ such that, for all $x\in\xset$,
+$$
+\widehat{f}(x) = \sum_{j=1}^n \widehat{\beta}_j k(X_j, x)\,.
+$$
+This yields,
+$$
+{1\over n}\sum_{i=1}^n(Y_{i}-f(X_{i}))^2+{\lambda\over n} \|f\|_{\mathcal{H}}^2 = {1\over n}\sum_{i=1}^n(Y_{i}-\sum_{j=1}^n \beta_j k(X_j, X_i))^2+{\lambda\over n} \langle \sum_{j=1}^n \beta_j k(X_j, \cdot), \sum_{i=1}^n \beta_i k(X_i, \cdot) \rangle\,.
+$$
+The proof is completed by noting that,
+$$
+\langle \sum_{j=1}^n \beta_j k(x_j, \cdot), \sum_{i=1}^n \beta_i k(x_i, \cdot) \rangle  = \sum_{i,j=1}^n \beta_i \beta_j k(x_i, x_j)\,.
+$$
+Let 
+$$
+L(\beta) = \| y - K \beta\|_2^2 + \lambda \beta^T K \beta.
+$$
+The gradient of $L$ is then given by
+$$
+\nabla L (\beta)  = -2K^T (y - K \beta) + \lambda (K \beta + K^T \beta)   = -2K(y-K \beta) + 2 \lambda K \beta\,.
+$$
+The minimum $\widehat{\beta}$ of $L$ satisfies 
+$$
+\widehat{\beta}_n = (K + \lambda I)^{-1} Y\,.
+$$
+}
+\item  Let $(u_i)_{1 \leq i \leq n}$ be an orthonormal basis of $\R^n$ of eigenvectors of $K$. Check that 
+$$
+K\widehat \beta_n= \sum_{i=1}^n {\lambda_{i}\over \lambda_{i}+\lambda} \langle Y_i, u_{i}\rangle u_{i}\,.
 $$
 
 
@@ -314,26 +317,26 @@ $$
 {\em
 Since $(u_i)_{1 \leq i \leq n}$ is an orthonormal basis of $\R^n$, one can write  
 		\begin{align*}
-			K \widehat{\beta} & = \sum_{i=1}^n \langle K \widehat{\beta}, u_i\rangle u_i\\
-			& = \sum_{i=1}^n \langle K (K+\lambda I)^{-1}y, u_i\rangle u_i\\
-			& = \sum_{i=1}^n \langle y, (K+\lambda I)^{-1} K  u_i\rangle u_i\\
-			& = \sum_{i=1}^n \frac{\lambda_i }{\lambda + \lambda_i} \langle y, u_i \rangle u_i.
+			K \widehat{\beta}_n & = \sum_{i=1}^n \langle K \widehat{\beta}_n, u_i\rangle u_i\,,\\
+			& = \sum_{i=1}^n \langle K (K+\lambda I)^{-1}Y, u_i\rangle u_i\,,\\
+			& = \sum_{i=1}^n \langle Y, (K+\lambda I)^{-1} K  u_i\rangle u_i\,,\\
+			& = \sum_{i=1}^n \frac{\lambda_i }{\lambda + \lambda_i} \langle Y, u_i \rangle u_i\,.
 		\end{align*}
 }
 \item Prove that
 $$
-\V[K\widehat \beta_n]=\sum_{i=1}^n \left(\lambda_{i}\sigma\over \lambda_{i}+\lambda\right)^2u_{i}u_{i}'\eqsp.
+\V[K\widehat \beta_n]=\sum_{i=1}^n \left(\lambda_{i}\sigma\over \lambda_{i}+\lambda\right)^2u_{i}u_{i}^T\eqsp.
 $$
 
 \vspace{.2cm}
 
 {\em
-Since $\widehat{\beta} = (K + \lambda I)^{-1}y$, 
+Since $\widehat{\beta}_n = (K + \lambda I)^{-1}Y$, 
 		\begin{align*}
-			\C (K \widehat{\beta}) & = K \C \left( (K + \lambda I)^{-1} y \right) K'\\
-			& = K (K + \lambda I)^{-1} \C (y) (K + \lambda I)^{-1} K\\
-			& = \sigma^2 K^2 (K + \lambda I)^{-2}\\
-			& = \sum_{i=1}^n \left( \frac{\lambda_i \sigma }{\lambda_i + \lambda}\right)^2 u_i u_i^T,
+			\V [K \widehat{\beta}_n] & = K \V \left[ (K + \lambda I)^{-1} Y \right]K^T\,,\\
+			& = K (K + \lambda I)^{-1} \V [Y] (K + \lambda I)^{-1} K\,,\\
+			& = \sigma^2 K^2 (K + \lambda I)^{-2}\,,\\
+			& = \sum_{i=1}^n \left( \frac{\lambda_i \sigma }{\lambda_i + \lambda}\right)^2 u_i u_i^T\,,
 		\end{align*}
 	using the eigenvector decomposition of $K$.
 }
